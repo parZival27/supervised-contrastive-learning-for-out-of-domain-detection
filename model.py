@@ -134,26 +134,6 @@ class BiLSTM(nn.Module):
                 label_mask = torch.mm(label,label.T).bool().long()
                 sup_cont_loss = nt_xent(ht, h_adv, label_mask, cuda=self.use_cuda=='cuda')
                 return sup_cont_loss
-        elif mode == 'augment':
-            seq_embed = self.embedding(seq)
-            seq_embed = self.dropout(seq_embed)
-            seq_embed = torch.tensor(seq_embed, dtype=torch.float32, requires_grad=True).cuda()
-            _, ht = self.rnn(seq_embed)
-            _, ht_adv = self.rnn(adv_features)
-            ht = torch.cat((ht[0].squeeze(0), ht[1].squeeze(0)), dim=1)
-            ht_adv = torch.cat((ht_adv[0].squeeze(0), ht_adv[1].squeeze(0)), dim=1)
-            ht_mix = torch.zeros(ht.size(0),ht.size(1))
-            for i in range(ht.size(0)//2):
-                ht_mix[2*i] = ht[2*i]
-                ht_mix[2*i+1] = ht_adv[2*i+1]
-            if self.cl_mode == 1:
-                return (nt_xent(ht) + nt_xent(ht_adv))/2
-            elif self.cl_mode == 2:
-                return nt_xent(ht)
-            elif self.cl_mode == 3:
-                return nt_xent(ht_adv)
-            elif self.cl_mode == 4:
-                return nt_xent(ht_mix)
         elif mode == 'inference':
             _, ht = self.rnn(seq)
             ht = torch.cat((ht[0].squeeze(0), ht[1].squeeze(0)), dim=1)
